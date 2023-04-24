@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1037571143092",
+    "project_id": "diseasedetection-3332e",
+    "storage_bucket": "diseasedetection-3332e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037571143092:android:6488be3ba3da2403f66ee1",
+        "android_client_info": {
+          "package_name": "com.demo.diseaseDetect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1037571143092-7q5a8mpokbk31oba6tu7vkahcmu532vp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjZtM6TxMdnTC_o8NLbOBa4NH-s7kb1C4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1037571143092-7q5a8mpokbk31oba6tu7vkahcmu532vp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
