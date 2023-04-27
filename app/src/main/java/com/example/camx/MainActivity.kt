@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
-
+//chiều t2 sáng t3 chiều t5
                 }
             }
         )
