@@ -1,54 +1,55 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.camx
 
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.ImageCapture
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.example.camx.databinding.ActivityMainBinding
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import android.widget.Toast
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
-import androidx.camera.core.CameraSelector
 import android.util.Log
 import android.widget.ImageView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.video.FallbackStrategy
-import androidx.camera.video.MediaStoreOutputOptions
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.VideoRecordEvent
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.*
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import java.nio.ByteBuffer
+import com.example.camx.databinding.ActivityMainBinding
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.ktx.storage
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
-import java.util.Locale
-
+import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 
 class MainActivity : AppCompatActivity() {
+
     private lateinit var viewBinding: ActivityMainBinding
 
     private var imageCapture: ImageCapture? = null
 
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
+    private var storage = Firebase.storage
+    private var storageRef = storage.getReferenceFromUrl("gs://diseasedetection-3332e.appspot.com")
 
     private lateinit var cameraExecutor: ExecutorService
-
-    var storageRef = storage.reference // Create a storage reference from our app
-
+    // Initialize the ImageView
+    val thumbnailImageView: ImageView = findViewById(R.id.thumbnail)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -61,11 +62,6 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-        // Create a reference to "mountains.jpg"
-        val mountainsRef = storageRef.child("mountains.jpg")
-
-        // While the file names are the same, the references point to different files
-        mountainsRef.name == mountainImagesRef.name // true
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
@@ -107,8 +103,33 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults){
                     val savedUri = output.savedUri ?: return // Check if savedUri is not null
-                    val bitmap = BitmapFactory.decodeFile(savedUri.path)
-                    imageView.setImageBitmap(bitmap) // Display the captured image in an ImageView
+                    val myBitmap = BitmapFactory.decodeFile(savedUri.path)
+                    thumbnailImageView.setImageBitmap(myBitmap) // Display the captured image in an ImageView
+
+                    var  calender : Calendar? = Calendar.getInstance();
+                    var imagesRef: StorageReference? = storageRef?.child("images" + calender?.timeInMillis + ".png")
+
+                    //send image to firebase
+                    thumbnailImageView.isDrawingCacheEnabled = true
+                    thumbnailImageView.buildDrawingCache()
+                    val bitmap = (thumbnailImageView.drawable as BitmapDrawable).bitmap
+                    val baos = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
+                    val data = baos.toByteArray()
+
+                    var uploadTask = imagesRef?.putBytes(data)
+                    uploadTask.addOnFailureListener {
+                        // Handle unsuccessful uploads
+                        Toast.makeText(this@MainActivity, "Error uploading image, error:", Toast.LENGTH_SHORT).show()
+
+                    }.addOnSuccessListener { taskSnapshot ->
+                        //add metadata for image
+                        val downloadLink = taskSnapshot.metadata?.downloadUrl
+
+                        Toast.makeText(this@MainActivity, "Uploaded the image, queuing to detection", Toast.LENGTH_SHORT).show()
+
+                        Log.d("download", downloadLink.toString() + "")
+                    }
 
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
@@ -118,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+
 
     private fun captureVideo() {
         val videoCapture = this.videoCapture ?: return
@@ -266,3 +288,5 @@ class MainActivity : AppCompatActivity() {
             }.toTypedArray()
     }
 }
+
+
